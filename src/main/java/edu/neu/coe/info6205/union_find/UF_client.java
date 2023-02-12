@@ -4,29 +4,31 @@ import java.util.Random;
 
 public class UF_client {
     public static void main(String args[]) {
-        int[] n = new int[100];
-        for(int i=0;i<100;i++){
+        int[] n = new int[1000];
+        for(int i=0;i<1000;i++){
             n[i] = i+10;
         }
         for (int i = 0; i < n.length; i++) {
             int m  = count(n[i]);
-            System.out.println("n = "+ (i+10) +"  m = "+m);
+            System.out.println((i+10) +","+m);
         }
     }
 
     private static int count(int n){
-        Random r = new Random();
-        UF h = new UF_HWQUPC(n);
         int count = 0;
-        while (!isAllConnect(h, n)) {
-            int p = r.nextInt(n);
-            int q = r.nextInt(n);
-            if (!h.isConnected(p, q)) {
-                h.union(p, q);
-                count++;
+        for(int i=0;i<1000;i++){
+            Random r = new Random();
+            UF h = new UF_HWQUPC(n);
+            while (!isAllConnect(h, n)) {
+                count = count + 1;
+                int p = r.nextInt(n);
+                int q = r.nextInt(n);
+                if (!h.isConnected(p, q)) {
+                    h.union(p, q);
+                }
             }
         }
-        return count;
+        return count/1000;
     }
     private static boolean isAllConnect(UF h, int n){
         for(int i=1;i<n;i++){
