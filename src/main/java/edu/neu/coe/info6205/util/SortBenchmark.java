@@ -3,15 +3,12 @@
  */
 package edu.neu.coe.info6205.util;
 
-import edu.neu.coe.info6205.sort.BaseHelper;
-import edu.neu.coe.info6205.sort.Helper;
-import edu.neu.coe.info6205.sort.SortWithHelper;
-import edu.neu.coe.info6205.sort.elementary.BubbleSort;
-import edu.neu.coe.info6205.sort.elementary.InsertionSort;
-import edu.neu.coe.info6205.sort.elementary.RandomSort;
-import edu.neu.coe.info6205.sort.elementary.ShellSort;
+import edu.neu.coe.info6205.sort.*;
+import edu.neu.coe.info6205.sort.elementary.*;
 import edu.neu.coe.info6205.sort.linearithmic.TimSort;
+import edu.neu.coe.info6205.sort.linearithmic.IntroSort;
 import edu.neu.coe.info6205.sort.linearithmic.*;
+import edu.neu.coe.info6205.util.Config;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,13 +34,54 @@ public class SortBenchmark {
 
     public static void main(String[] args) throws IOException {
         Config config = Config.load(SortBenchmark.class);
-        logger.info("SortBenchmark.main: " + config.get("SortBenchmark", "version") + " with word counts: " + Arrays.toString(args));
-        if (args.length == 0) logger.warn("No word counts specified on the command line");
-        SortBenchmark benchmark = new SortBenchmark(config);
-        benchmark.sortIntegersByShellSort(config.getInt("shellsort", "n", 100000));
-        benchmark.sortStrings(Arrays.stream(args).map(Integer::parseInt));
-        benchmark.sortLocalDateTimes(config.getInt("benchmarkdatesorters", "n", 100000), config);
+
+        int size = 10000;
+        int runs = 100;
+        String des;
+        int type = 3;
+        while(size<256000){
+            if(type==1){
+                des = "QuickSort_DualPivot";
+                Helper<Integer> helper = HelperFactory.create(des,size,true,config);
+                SortWithHelper<Integer> sort = new QuickSort_DualPivot<>(helper);
+                Integer[] ints = helper.random(Integer.class, r -> r.nextInt());
+                SorterBenchmark sorterBenchmark = new SorterBenchmark(Integer.class, sort, ints, runs, timeLoggersLinearithmic);
+                sorterBenchmark.run(size);
+
+                System.out.println(((InstrumentedHelper)sort.getHelper()).getStatPack().mean("compares") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("swaps") + " , " +((InstrumentedHelper)sort.getHelper()).getStatPack().mean("copies") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("hits"));
+                size = size*2;
+            }if(type==2){
+                des = "MergeSort";
+                Helper<Integer> helper = HelperFactory.create(des,size,true,config);
+                SortWithHelper<Integer> sort = new MergeSort<>(helper);
+                Integer[] ints = helper.random(Integer.class, r -> r.nextInt());
+                SorterBenchmark sorterBenchmark = new SorterBenchmark(Integer.class, (SortWithHelper) sort, ints, runs, timeLoggersLinearithmic);
+                sorterBenchmark.run(size);
+                System.out.println(((InstrumentedHelper)sort.getHelper()).getStatPack().mean("compares") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("swaps") + " , " +((InstrumentedHelper)sort.getHelper()).getStatPack().mean("copies") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("hits"));
+                size = size*2;
+            }else{
+                des = "HeapSort";
+                Helper<Integer> helper = HelperFactory.create(des,size,true,config);
+                SortWithHelper<Integer> sort = new HeapSort<>(helper);
+                Integer[] ints = helper.random(Integer.class, r -> r.nextInt());
+                SorterBenchmark sorterBenchmark = new SorterBenchmark(Integer.class, (SortWithHelper) sort, ints, runs, timeLoggersLinearithmic);
+                sorterBenchmark.run(size);
+                System.out.println(((InstrumentedHelper)sort.getHelper()).getStatPack().mean("compares") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("swaps") + " , " +((InstrumentedHelper)sort.getHelper()).getStatPack().mean("copies") + " , " + ((InstrumentedHelper)sort.getHelper()).getStatPack().mean("hits"));
+                size = size*2;
+            }
+        }
+
+
+//        Config config = Config.load(SortBenchmark.class);
+//        logger.info("SortBenchmark.main: " + config.get("SortBenchmark", "version") + " with word counts: " + Arrays.toString(args));
+//        if (args.length == 0) logger.warn("No word counts specified on the command line");
+//        SortBenchmark benchmark = new SortBenchmark(config);
+//        benchmark.sortIntegersByShellSort(config.getInt("shellsort", "n", 100000));
+//        benchmark.sortStrings(Arrays.stream(args).map(Integer::parseInt));
+//        benchmark.sortLocalDateTimes(config.getInt("benchmarkdatesorters", "n", 100000), config);
     }
+
+
 
     public void sortLocalDateTimes(final int n, Config config) throws IOException {
         logger.info("Beginning LocalDateTime sorts");
@@ -142,6 +180,7 @@ public class SortBenchmark {
             runMergeSortBenchmark(words, nWords, nRuns, true, true);
         }
 
+
         if (isConfigBenchmarkStringSorter("quicksort3way"))
             runStringSortBenchmark(words, nWords, nRuns, new QuickSort_3way<>(nWords, config), timeLoggersLinearithmic);
 
@@ -150,6 +189,12 @@ public class SortBenchmark {
 
         if (isConfigBenchmarkStringSorter("quicksort"))
             runStringSortBenchmark(words, nWords, nRuns, new QuickSort_Basic<>(nWords, config), timeLoggersLinearithmic);
+
+
+        if (isConfigBenchmarkStringSorter("heapsort")) {
+            Helper<String> helper = HelperFactory.create("Heapsort", nWords, config);
+            runStringSortBenchmark(words, nWords, nRuns, new HeapSort<>(helper), timeLoggersLinearithmic);
+        }
 
         if (isConfigBenchmarkStringSorter("introsort"))
             runStringSortBenchmark(words, nWords, nRuns, new IntroSort<>(nWords, config), timeLoggersLinearithmic);
